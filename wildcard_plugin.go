@@ -36,7 +36,7 @@ import (
 //Wildcard is this plugin
 type Wildcard struct {
 	ui 				terminal.UI
-	matchedApps 	[]plugin_models.ApplicationSummary
+	matchedApps 	[]plugin_models.GetAppsModel
 }
 
 //GetMetadata returns metatada
@@ -69,9 +69,14 @@ func (cmd *Wildcard) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
+func newWildcard() *Wildcard {
+	return &Wildcard {
+		ui: terminal.NewUI(os.Stdin, terminal.NewTeePrinter()),
+	}
+}
+
 func main() { 
-	plugin.Start(new(Wildcard))
-	//plugin.Start(newWildcard())
+	plugin.Start(newWildcard())
 }
 
 func (cmd *Wildcard) usage(args []string) error {
@@ -85,6 +90,7 @@ func (cmd *Wildcard) usage(args []string) error {
 //Run runs the plugin
 //called everytime user executes the command
 func (cmd *Wildcard) Run(cliConnection plugin.CliConnection, args []string) {
+	defer panic.HandlePanics()
 	//fmt.Println(formatters.ToMegabytes("d"))
 	if args[0] == "wildcard-apps" { //checking is very imp.
 		cmd.WildcardCommandApps(cliConnection, args)
@@ -110,7 +116,7 @@ func InitializeCliDependencies() {
 		trace.Logger = trace.NewLogger(cc_config.Trace())
 	}
 }
-func (cmd *Wildcard) getMatchedApps(cliConnection plugin.CliConnection, args []string) []plugin_models.ApplicationSummary {
+func (cmd *Wildcard) getMatchedApps(cliConnection plugin.CliConnection, args []string) []plugin_models.GetAppsModel {
 	pattern := args[1]
 	output, _ := cliConnection.GetApps()
 	for i := 0; i < (len(output)); i++ {
@@ -123,9 +129,7 @@ func (cmd *Wildcard) getMatchedApps(cliConnection plugin.CliConnection, args []s
 }
 func (cmd *Wildcard) WildcardCommandApps(cliConnection plugin.CliConnection, args []string) {
 	InitializeCliDependencies()
-	defer panic.HandlePanics()
 	cmd.getMatchedApps(cliConnection, args)
-	cmd.ui = terminal.NewUI(os.Stdin, terminal.NewTeePrinter())
 	table := terminal.NewTable(cmd.ui, []string{T("name"), T("requested state"), T("instances"), T("memory"), T("disk"), T("urls")})
 	for _, app := range cmd.matchedApps {
 		var urls []string
